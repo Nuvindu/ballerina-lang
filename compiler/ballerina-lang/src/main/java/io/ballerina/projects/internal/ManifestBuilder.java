@@ -793,6 +793,12 @@ public class ManifestBuilder {
         TopLevelNode topLevelNode = toolNode.entries().get(key);
         String errorMessage = "missing key '[" + key + "]' in table '[tool." + toolCode + "]'.";
         if (topLevelNode == null) {
+
+            // TODO: Remove below code once the mandatory filepath issue is resolved
+            if (key.equals("filePath")) {
+                return "./Ballerina.toml";
+            }
+
             if (!key.equals(TARGETMODULE)) {
                 reportDiagnostic(toolNode, errorMessage,
                         ProjectDiagnosticErrorCode.MISSING_TOOL_PROPERTIES_IN_BALLERINA_TOML,
