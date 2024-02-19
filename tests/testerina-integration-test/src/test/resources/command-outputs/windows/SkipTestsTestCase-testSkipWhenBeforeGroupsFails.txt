@@ -12,6 +12,9 @@ Running Tests
 			callableName: beforeGroupsFunc2  fileName: skip-when-beforeGroups-fails.bal lineNumber: 32
 			callableName: beforeGroupsFunc2$lambda2$  fileName: skip-when-beforeGroups-fails.bal lineNumber: 86
 		
+
+		Test execution time :*****ms
+
 	[fail] afterSuiteFunc[after test suite function]:
 	    error {ballerina/test:0}TestError ("Assertion Failed!
 		 
@@ -40,4 +43,4 @@ Running Tests
 		2 passing
 		0 failing
 		3 skipped
-error: there are test failures
+error: there are test failures

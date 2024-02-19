@@ -6,6 +6,12 @@ Compiling source
 Running Tests
 
 	groups-test.bal
+
+testFunc5: has failed
+
+
+		Test execution time :*****ms
+
 		[pass] testFunc1
 		[pass] testFunc2
 		[pass] testFunc3
@@ -24,4 +30,4 @@ Running Tests
 		4 passing
 		1 failing
 		0 skipped
-error: there are test failures
+error: there are test failures

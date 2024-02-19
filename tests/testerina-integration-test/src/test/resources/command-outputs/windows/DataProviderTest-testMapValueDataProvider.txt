@@ -6,6 +6,12 @@ WARNING [tests\new-data-provider-tests.bal:(153:9,153:21)] unused variable 'a'
 Running Tests with Coverage
 
 	dataproviders
+
+testGetState:1 has failed
+
+
+		Test execution time :*****ms
+
 		[pass] testGetState#0
 
 		[fail] testGetState#1:
@@ -27,10 +33,13 @@ Running Tests with Coverage
 
 	dataproviders.module1
 
+		Test execution time :*****ms
+
+
 
 		No tests found
 
 Generating Test Report
 	data-providers\target\report\test_results.json
 
-error: there are test failures
+error: there are test failures
