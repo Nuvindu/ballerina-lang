@@ -18,11 +18,15 @@
 
 package io.ballerina.cli.task;
 
+import io.ballerina.cli.utils.AnnotateDiagnostics;
 import io.ballerina.cli.utils.BuildTime;
 import io.ballerina.projects.CodeGeneratorResult;
 import io.ballerina.projects.CodeModifierResult;
+import io.ballerina.projects.Document;
 import io.ballerina.projects.JBallerinaBackend;
 import io.ballerina.projects.JvmTarget;
+import io.ballerina.projects.ModuleName;
+import io.ballerina.projects.Package;
 import io.ballerina.projects.PackageCompilation;
 import io.ballerina.projects.PackageResolution;
 import io.ballerina.projects.Project;
@@ -42,8 +46,12 @@ import org.ballerinalang.central.client.CentralClientConstants;
 import org.wso2.ballerinalang.util.RepoUtils;
 
 import java.io.PrintStream;
+import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static io.ballerina.cli.launcher.LauncherUtils.createLauncherException;
@@ -56,6 +64,7 @@ import static io.ballerina.projects.util.ProjectConstants.TOOL_DIAGNOSTIC_CODE_P
  * @since 2.0.0
  */
 public class CompileTask implements Task {
+
     private final transient PrintStream out;
     private final transient PrintStream err;
     private final boolean compileForBalPack;
@@ -208,14 +217,39 @@ public class CompileTask implements Task {
             if (project.buildOptions().dumpBuildTime()) {
                 BuildTime.getInstance().codeGenDuration = System.currentTimeMillis() - start;
             }
+            // HashSet to keep track of the diagnostics to avoid duplicate diagnostics
+            Set<String> diagnosticSet = new HashSet<>();
+            // HashMap for documents based on filename
+            Map<String, Document> documentMap = new HashMap<>();
+            int terminalWidth = AnnotateDiagnostics.getTerminalWidth();
+            boolean colorEnabled = terminalWidth != 0;
 
+            Package currentPackage = project.currentPackage();
+            currentPackage.moduleIds().forEach(moduleId -> {
+                currentPackage.module(moduleId).documentIds().forEach(documentId -> {
+                    Document document = currentPackage.module(moduleId).document(documentId);
+                    documentMap.put(getDocumentPath(document.module().moduleName(), document.name()), document);
+                });
+                currentPackage.module(moduleId).testDocumentIds().forEach(documentId -> {
+                    Document document = currentPackage.module(moduleId).document(documentId);
+                    documentMap.put(getDocumentPath(document.module().moduleName(), document.name()), document);
+                });
+            });
             // Report package compilation and backend diagnostics
             diagnostics.addAll(jBallerinaBackend.diagnosticResult().diagnostics(false));
             diagnostics.forEach(d -> {
                 if (d.diagnosticInfo().code() == null || (!d.diagnosticInfo().code().equals(
                         ProjectDiagnosticErrorCode.BUILT_WITH_OLDER_SL_UPDATE_DISTRIBUTION.diagnosticId()) &&
                         !d.diagnosticInfo().code().startsWith(TOOL_DIAGNOSTIC_CODE_PREFIX))) {
-                    err.println(d);
+                    if (diagnosticSet.add(d.toString())) {
+                        Document document = documentMap.get(d.location().lineRange().fileName());
+                        if (document != null) {
+                            err.println(AnnotateDiagnostics.renderDiagnostic(d, document,
+                                    terminalWidth == 0 ? 999 : terminalWidth, colorEnabled));
+                        } else {
+                            err.println(AnnotateDiagnostics.renderDiagnostic(d, colorEnabled));
+                        }
+                    }
                 }
             });
             // Report build tool execution diagnostics
@@ -237,6 +271,13 @@ public class CompileTask implements Task {
         } catch (ProjectException e) {
             throw createLauncherException("compilation failed: " + e.getMessage());
         }
+    }
+
+    private String getDocumentPath(ModuleName moduleName, String documentName) {
+        if (moduleName.isDefaultModuleName()) {
+            return documentName;
+        }
+        return Paths.get("modules", moduleName.moduleNamePart(), documentName).toString();
     }
 
     private boolean isPackCmdForATemplatePkg(Project project) {
